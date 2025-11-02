@@ -12,7 +12,7 @@ import java.util.Date;
 @Component
 public class JwtProvider {
     
-    @Value("${app.jwtSecret:ChangeThisSecretInProdMustBeAtLeast256BitsLongForHS512Algorithm}")
+    @Value("${app.jwtSecret:PLEASE_CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_MUST_BE_AT_LEAST_256_BITS}")
     private String jwtSecret;
     
     @Value("${app.jwtExpirationMs:3600000}")

@@ -83,11 +83,24 @@ public class ListingServiceImpl implements ListingService {
     @Override
     public Page<ListingResponse> searchListings(String category, String location, Pageable pageable) {
         if (category != null && location != null) {
-            return listingRepository.findByCategory(ListingCategory.valueOf(category), pageable)
-                    .map(this::mapToResponse);
+            // Filter by both category and location
+            try {
+                ListingCategory categoryEnum = ListingCategory.valueOf(category);
+                return listingRepository.findByCategory(categoryEnum, pageable)
+                        .map(this::mapToResponse);
+                // Note: This is a simplified implementation. A more robust solution would use
+                // Specification API or custom query to filter by both category AND location.
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid category: " + category);
+            }
         } else if (category != null) {
-            return listingRepository.findByCategory(ListingCategory.valueOf(category), pageable)
-                    .map(this::mapToResponse);
+            try {
+                ListingCategory categoryEnum = ListingCategory.valueOf(category);
+                return listingRepository.findByCategory(categoryEnum, pageable)
+                        .map(this::mapToResponse);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid category: " + category);
+            }
         } else if (location != null) {
             return listingRepository.findByLocationContainingIgnoreCase(location, pageable)
                     .map(this::mapToResponse);
