@@ -16,14 +16,14 @@ A digital platform for planning and managing weddings in Sri Lanka. Users can se
 ## Technologies Used
 - **Frontend:** React.js (web) or JavaFX (desktop)
 - **Backend:** Spring Boot (Java)
-- **Database:** MySQL or PostgreSQL
+- **Database:** MySQL
 - **Authentication:** Spring Security, JWT
 - **Payments:** PayHere, Stripe
 - **Real-time communication:** WebSocket, Twilio, Gmail API, Notify.lk
 - **Deployment:** AWS, Google Cloud, Render.com
 
 ## Project Structure
-- `/frontend` (React or JavaFX user app)
+- `/frontend` (React)
 - `/backend` (Spring Boot REST API)
 - `/docs` (design docs, diagrams, mockups, test plans, etc.)
 
