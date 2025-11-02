@@ -1,0 +1,42 @@
+﻿package lk.wedrent.wedrent_backend.service;
+
+import lk.wedrent.wedrent_backend.dto.PaymentRequest;
+import lk.wedrent.wedrent_backend.entity.Booking;
+import lk.wedrent.wedrent_backend.entity.Payment;
+import lk.wedrent.wedrent_backend.entity.PaymentStatus;
+import lk.wedrent.wedrent_backend.repository.BookingRepository;
+import lk.wedrent.wedrent_backend.repository.PaymentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+
+@Service
+public class PaymentService {
+
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
+
+    @Autowired
+    public PaymentService(PaymentRepository paymentRepository, BookingRepository bookingRepository) {
+        this.paymentRepository = paymentRepository;
+        this.bookingRepository = bookingRepository;
+    }
+
+    public Payment processMockPayment(PaymentRequest req) {
+        Booking booking = bookingRepository.findById(req.bookingId()).orElseThrow();
+        Payment payment = new Payment();
+        payment.setBooking(booking);
+        payment.setAmount(req.amount());
+        payment.setProvider(req.provider() == null ? "mock" : req.provider());
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setTransactionId("MOCK-" + System.currentTimeMillis());
+        booking.setStatus(booking.getStatus() == null ? booking.getStatus() : booking.getStatus());
+        bookingRepository.save(booking);
+        return paymentRepository.save(payment);
+    }
+
+    public void handleWebhookStub(String provider, String payload) {
+        // store raw payload or process in Sprint 3
+    }
+}

@@ -1,0 +1,270 @@
+🕊️ Project Name: WedRent
+A Sri Lankan wedding rental marketplace connecting users (brides/grooms) and vendors to rent or book wedding-related items and services.
+
+🧩 Core Technologies
+Backend: Spring Boot 3.x (Java 17+)
+
+Database: MySQL (JPA + Hibernate)
+
+Security: Spring Security + JWT (with Refresh Tokens)
+
+API Docs: SpringDoc OpenAPI (Swagger UI)
+
+Object Mapping: MapStruct
+
+Validation: Jakarta Validation
+
+Database Migrations: Liquibase or Flyway
+
+File Storage: AWS S3 / MinIO for images
+
+Real-time Communication: WebSocket
+
+Payments: PayHere or Stripe API
+
+Testing: JUnit + Mockito
+
+Build Tool: Maven or Gradle
+
+🧱 Core Architecture
+Packages
+csharp
+Copy code
+com.wedrent
+ ├── config/               # Security, Web, Swagger, etc.
+ ├── controller/           # REST controllers
+ ├── dto/                  # Data Transfer Objects
+ ├── entity/               # JPA Entities
+ ├── repository/           # Spring Data Repositories
+ ├── service/              # Business Logic Services
+ ├── mapper/               # MapStruct Mappers
+ ├── exception/            # Global error handlers
+ └── util/                 # Utility classes (e.g., JWT Utils)
+🧍‍♂️ 1. User & Vendor Authentication (Sprint 1 ✅ Completed)
+Entities
+User
+
+id, email, password, role, createdAt
+
+VendorProfile
+
+id, businessName, description, address, contactNumber, verified
+
+Role
+
+id, name (USER, VENDOR, ADMIN)
+
+VerificationToken
+
+id, token, userId, expiryDate
+
+Relationships
+User 1–1 VendorProfile
+
+User 1–n Listing
+
+User 1–n Booking
+
+User 1–n Review
+
+Features
+Register/Login (Email + Password, Google OAuth2 optional)
+
+Email/OTP verification (Twilio/Notify.lk)
+
+Password encryption (BCrypt)
+
+JWT + Refresh Token authentication
+
+Role-based authorization
+
+Password reset
+
+Global exception handling (@ControllerAdvice)
+
+🏪 2. Vendor Listing Management (Sprint 1 ✅ Completed)
+Entities
+Listing
+
+id, title, description, price, location, status, avgRating, reviewCount
+
+Image
+
+id, listingId, imageUrl, uploadedAt
+
+Category
+
+id, name
+
+AvailabilitySlot
+
+id, listingId, startDate, endDate, quantity, status
+
+Relationships
+VendorProfile 1–n Listing
+
+Listing 1–n Image
+
+Listing n–1 Category
+
+Listing 1–n AvailabilitySlot
+
+Features
+Add/Edit/Delete Listings
+
+Upload multiple images (stored via S3/MinIO)
+
+Manage categories, availability, and pricing
+
+Listing lifecycle: PENDING, ACTIVE, INACTIVE
+
+Validation on DTOs (@Valid)
+
+🔎 3. Search & Filtering (Sprint 2)
+Implementation
+Use Spring Data JPA Specifications or QueryDSL
+
+Filter by:
+
+Category
+
+Location
+
+Price range
+
+Rating
+
+Support pagination and sorting
+
+Cache popular searches using @Cacheable
+
+Example API
+sql
+Copy code
+GET /listings/search?category=dress&city=Colombo&minPrice=1000&maxPrice=5000
+📅 4. Booking Management (Sprint 2)
+Entities
+Booking
+
+id, user, listing, startDate, endDate, status, totalPrice
+
+Payment
+
+id, bookingId, amount, status, transactionId, provider
+
+Relationships
+User 1–n Booking
+
+Listing 1–n Booking
+
+Booking 1–1 Payment
+
+Features
+Flow: Request → Approve → Pay → Complete
+
+Booking statuses: PENDING, CONFIRMED, CANCELLED, COMPLETED
+
+Optimistic locking for concurrency control
+
+Webhook handlers for PayHere/Stripe
+
+🖼️ 5. Image Upload (Sprint 2)
+Features
+Image upload via REST endpoint
+
+Store in AWS S3 or MinIO
+
+Save metadata (URL, upload date, size)
+
+Validate file type and size
+
+⭐ 6. Reviews & Ratings (Sprint 3)
+Entities
+Review
+
+id, bookingId, user, listing, rating, comment, createdAt
+
+Relationships
+User 1–n Review
+
+Listing 1–n Review
+
+Booking 1–1 Review
+
+Features
+Add review after booking completion
+
+Update average rating and review count in Listing
+
+🧑‍💼 7. Admin Management (Sprint 3)
+Entities
+Admin — subclass of User with ADMIN role
+
+AuditLog
+
+id, action, timestamp, performedBy, details
+
+Features
+Manage (approve/suspend/delete) users, vendors, and listings
+
+View reports: listings, bookings, payments
+
+Role-based access for /admin/* routes
+
+Audit logging
+
+💬 8. Messaging & Notifications (Sprint 3)
+Entities
+Conversation
+
+id, participants, createdAt
+
+Message
+
+id, conversationId, senderId, content, timestamp
+
+Notification
+
+id, userId, type, message, createdAt, read
+
+Relationships
+Conversation 1–n Message
+
+User n–n Conversation
+
+User 1–n Notification
+
+Features
+Real-time chat via WebSocket
+
+Store message history
+
+Push/email notifications for offline users
+
+⚙️ 9. Security & Validation
+Global Exception Handling (@ControllerAdvice)
+
+DTO validation with @Valid
+
+Secure file upload (MIME validation)
+
+No sensitive data in logs
+
+Use transactions in booking/payment flows
+
+📄 10. Dev Best Practices
+DTOs + Entities separated with MapStruct
+
+Database versioning with Liquibase/Flyway
+
+Unit & Integration tests for each service
+
+Consistent paginated responses
+
+Auto-generated Swagger documentation
+
+🚀 Sprint Plan Overview
+Sprint	Focus	Core Deliverables
+1	Auth + Base Models	JWT Auth, Vendor/User Entities, Listing CRUD, Validation, Error Handler
+2	Search + Booking	Search API, Booking Flow, Image Upload, Payment Skeleton
+3	Reviews + Admin + Messaging	Reviews, Admin Controls, WebSocket Chat, Payment Integration

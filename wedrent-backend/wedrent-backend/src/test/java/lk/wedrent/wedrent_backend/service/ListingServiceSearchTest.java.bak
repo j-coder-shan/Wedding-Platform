@@ -1,0 +1,57 @@
+﻿package lk.wedrent.wedrent_backend.service;
+
+import lk.wedrent.wedrent_backend.dto.ListingSearchRequest;
+import lk.wedrent.wedrent_backend.entity.Listing;
+import lk.wedrent.wedrent_backend.entity.ListingCategory;
+import lk.wedrent.wedrent_backend.repository.ListingRepository;
+import lk.wedrent.wedrent_backend.service.impl.ListingServiceImpl;
+import lk.wedrent.wedrent_backend.repository.VendorRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class ListingServiceSearchTest {
+
+    @Mock
+    private ListingRepository listingRepository;
+    
+    @Mock
+    private VendorRepository vendorRepository;
+
+    @Test
+    public void testSearch() {
+        // Use implementation instead of interface
+        ListingServiceImpl listingService = new ListingServiceImpl(listingRepository, vendorRepository);
+        
+        Page<Listing> mockPage = new PageImpl<>(List.of());
+        when(listingRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(mockPage);
+        
+        // Create request using setters instead of constructor
+        ListingSearchRequest request = new ListingSearchRequest();
+        request.setCategory("DRESS");
+        request.setCity("Colombo");
+        request.setMinPrice(BigDecimal.valueOf(1000.0));
+        request.setMaxPrice(BigDecimal.valueOf(5000.0));
+        request.setMinRating(4.0);
+        request.setPage(0);
+        request.setSize(10);
+        request.setSort("id,desc");
+        
+        Page<Listing> result = listingService.search(request);
+        assertEquals(0, result.getTotalElements());
+    }
+}

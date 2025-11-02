@@ -1,0 +1,45 @@
+﻿package lk.wedrent.wedrent_backend.service;
+
+import lk.wedrent.wedrent_backend.dto.BookingRequest;
+import lk.wedrent.wedrent_backend.entity.Booking;
+import lk.wedrent.wedrent_backend.entity.Listing;
+import lk.wedrent.wedrent_backend.entity.User;
+import lk.wedrent.wedrent_backend.repository.BookingRepository;
+import lk.wedrent.wedrent_backend.repository.ListingRepository;
+import lk.wedrent.wedrent_backend.repository.UserRepository;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class BookingServiceTest {
+
+    @Test
+    void createBookingSucceeds() {
+        BookingRepository bookingRepo = Mockito.mock(BookingRepository.class);
+        ListingRepository listingRepo = Mockito.mock(ListingRepository.class);
+        UserRepository userRepo = Mockito.mock(UserRepository.class);
+
+        BookingService service = new BookingService(bookingRepo, listingRepo, userRepo);
+
+        User user = new User(); user.setId(1L);
+        Listing listing = new Listing(); listing.setId(2L);
+
+        when(userRepo.findById(1L)).thenReturn(Optional.of(user));
+        when(listingRepo.findById(2L)).thenReturn(Optional.of(listing));
+        when(bookingRepo.save(any(Booking.class))).thenAnswer(i -> i.getArgument(0));
+
+        var req = new BookingRequest(2L, LocalDate.now(), LocalDate.now().plusDays(2), new BigDecimal("2000"));
+        var booking = service.createBooking(1L, req);
+
+        assertNotNull(booking);
+        assertEquals(user, booking.getUser());
+        assertEquals(listing, booking.getListing());
+        verify(bookingRepo, times(1)).save(any(Booking.class));
+    }
+}
