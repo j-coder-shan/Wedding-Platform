@@ -1,0 +1,8 @@
+package lk.wedrent.wedrent_backend.entity;
+
+public enum PaymentStatus {
+    PENDING,
+    SUCCESS,
+    FAILED,
+    REFUNDED
+}
