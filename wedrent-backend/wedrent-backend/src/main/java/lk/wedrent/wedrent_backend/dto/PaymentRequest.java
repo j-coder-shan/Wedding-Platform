@@ -1,0 +1,10 @@
+package lk.wedrent.wedrent_backend.dto;
+
+import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
+
+public record PaymentRequest(
+    @NotNull Long bookingId,
+    @NotNull BigDecimal amount,
+    String provider
+) {}

@@ -1,31 +1,30 @@
+// java
 package lk.wedrent.wedrent_backend.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtProvider {
-    
-    @Value("${app.jwtSecret:PLEASE_CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_MUST_BE_AT_LEAST_256_BITS}")
+
+    @Value("${app.jwtSecret:ChangeThisSecretInProd}")
     private String jwtSecret;
-    
+
     @Value("${app.jwtExpirationMs:3600000}")
     private int jwtExpirationMs;
-    
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
-    
+
     public String generateToken(String userEmail) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationMs);
-        
         return Jwts.builder()
                 .setSubject(userEmail)
                 .setIssuedAt(now)
@@ -33,16 +32,16 @@ public class JwtProvider {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
-    
+
     public String getEmailFromJwt(String token) {
-        Claims claims = Jwts.parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+                .getBody()
+                .getSubject();
     }
-    
+
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder()

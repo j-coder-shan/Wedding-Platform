@@ -2,31 +2,35 @@ package lk.wedrent.wedrent_backend.service.impl;
 
 import lk.wedrent.wedrent_backend.dto.ListingRequest;
 import lk.wedrent.wedrent_backend.dto.ListingResponse;
+import lk.wedrent.wedrent_backend.dto.ListingSearchRequest;
 import lk.wedrent.wedrent_backend.entity.Listing;
 import lk.wedrent.wedrent_backend.entity.ListingCategory;
 import lk.wedrent.wedrent_backend.entity.VendorProfile;
 import lk.wedrent.wedrent_backend.repository.ListingRepository;
 import lk.wedrent.wedrent_backend.repository.VendorRepository;
 import lk.wedrent.wedrent_backend.service.ListingService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import lk.wedrent.wedrent_backend.specification.ListingSpecification;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class ListingServiceImpl implements ListingService {
-    
+
     private final ListingRepository listingRepository;
     private final VendorRepository vendorRepository;
-    
+
+    @Autowired
+    public ListingServiceImpl(ListingRepository listingRepository, VendorRepository vendorRepository) {
+        this.listingRepository = listingRepository;
+        this.vendorRepository = vendorRepository;
+    }
+
     @Override
-    @Transactional
-    public ListingResponse createListing(Long vendorId, ListingRequest request) {
-        VendorProfile vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
-        
+    public ListingResponse createListing(ListingRequest request) {
+        VendorProfile vendor = vendorRepository.findById(request.getVendorId())
+            .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
         Listing listing = new Listing();
         listing.setVendor(vendor);
         listing.setTitle(request.getTitle());
@@ -34,94 +38,84 @@ public class ListingServiceImpl implements ListingService {
         listing.setCategory(request.getCategory());
         listing.setLocation(request.getLocation());
         listing.setPrice(request.getPrice());
-        listing.setCurrency(request.getCurrency());
-        listing.setAvailable(request.getAvailable());
-        
+        listing.setCurrency(request.getCurrency() != null ? request.getCurrency() : "LKR");
         Listing saved = listingRepository.save(listing);
-        return mapToResponse(saved);
+        return toDto(saved);
     }
-    
+
     @Override
-    @Transactional
+    public ListingResponse getListing(Long id) {
+        Listing l = listingRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+        return toDto(l);
+    }
+
+    @Override
+    public Page<ListingResponse> search(String q, String location, String category, Pageable pageable) {
+        if (category != null) {
+            ListingCategory cat = ListingCategory.valueOf(category.toUpperCase());
+            Page<Listing> page = listingRepository.findByCategory(cat, pageable);
+            return page.map(this::toDto);
+        }
+        if (location != null) {
+            Page<Listing> page = listingRepository.findByLocationContainingIgnoreCase(location, pageable);
+            return page.map(this::toDto);
+        }
+        Page<Listing> page = listingRepository.findAll(pageable);
+        return page.map(this::toDto);
+    }
+
+    @Override
     public ListingResponse updateListing(Long id, ListingRequest request) {
         Listing listing = listingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
-        
-        listing.setTitle(request.getTitle());
-        listing.setDescription(request.getDescription());
-        listing.setCategory(request.getCategory());
-        listing.setLocation(request.getLocation());
-        listing.setPrice(request.getPrice());
-        listing.setCurrency(request.getCurrency());
-        listing.setAvailable(request.getAvailable());
-        
-        Listing updated = listingRepository.save(listing);
-        return mapToResponse(updated);
+            .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+        if (request.getTitle() != null) listing.setTitle(request.getTitle());
+        if (request.getDescription() != null) listing.setDescription(request.getDescription());
+        if (request.getCategory() != null) listing.setCategory(request.getCategory());
+        if (request.getLocation() != null) listing.setLocation(request.getLocation());
+        if (request.getPrice() != null) listing.setPrice(request.getPrice());
+        listing.setUpdatedAt(java.time.Instant.now());
+        return toDto(listingRepository.save(listing));
     }
-    
+
     @Override
-    @Transactional
     public void deleteListing(Long id) {
-        if (!listingRepository.existsById(id)) {
-            throw new IllegalArgumentException("Listing not found");
-        }
         listingRepository.deleteById(id);
     }
-    
+
     @Override
-    public ListingResponse getListingById(Long id) {
-        Listing listing = listingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
-        return mapToResponse(listing);
-    }
-    
-    @Override
-    public Page<ListingResponse> getAllListings(Pageable pageable) {
-        return listingRepository.findAll(pageable).map(this::mapToResponse);
-    }
-    
-    @Override
-    public Page<ListingResponse> searchListings(String category, String location, Pageable pageable) {
-        if (category != null && location != null) {
-            // Filter by both category and location
-            try {
-                ListingCategory categoryEnum = ListingCategory.valueOf(category);
-                return listingRepository.findByCategory(categoryEnum, pageable)
-                        .map(this::mapToResponse);
-                // Note: This is a simplified implementation. A more robust solution would use
-                // Specification API or custom query to filter by both category AND location.
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid category: " + category);
-            }
-        } else if (category != null) {
-            try {
-                ListingCategory categoryEnum = ListingCategory.valueOf(category);
-                return listingRepository.findByCategory(categoryEnum, pageable)
-                        .map(this::mapToResponse);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid category: " + category);
-            }
-        } else if (location != null) {
-            return listingRepository.findByLocationContainingIgnoreCase(location, pageable)
-                    .map(this::mapToResponse);
+    @Cacheable(value = "listingsSearch", key = "#req.category + ':' + #req.city + ':' + #req.minPrice + ':' + #req.maxPrice + ':' + #req.minRating + ':' + #req.page + ':' + #req.size + ':' + #req.sort")
+    public Page<Listing> search(ListingSearchRequest req) {
+        int page = req.getPage() != null && req.getPage() >= 0 ? req.getPage() : 0;
+        int size = req.getSize() != null && req.getSize() > 0 ? req.getSize() : 20;
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        if (req.getSort() != null && !req.getSort().isBlank()) {
+            String[] parts = req.getSort().split(",");
+            Sort.Direction dir = parts.length > 1 && "asc".equalsIgnoreCase(parts[1]) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            sort = Sort.by(dir, parts[0]);
         }
-        return getAllListings(pageable);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        var spec = ListingSpecification.filter(req.getCategoryEnum(), req.getCity(), req.getMinPrice(), req.getMaxPrice(), req.getMinRating());
+        return listingRepository.findAll(spec, pageable);
     }
-    
-    private ListingResponse mapToResponse(Listing listing) {
-        ListingResponse response = new ListingResponse();
-        response.setId(listing.getId());
-        response.setVendorId(listing.getVendor().getId());
-        response.setVendorName(listing.getVendor().getBusinessName());
-        response.setTitle(listing.getTitle());
-        response.setDescription(listing.getDescription());
-        response.setCategory(listing.getCategory());
-        response.setLocation(listing.getLocation());
-        response.setPrice(listing.getPrice());
-        response.setCurrency(listing.getCurrency());
-        response.setAvailable(listing.getAvailable());
-        response.setCreatedAt(listing.getCreatedAt());
-        response.setUpdatedAt(listing.getUpdatedAt());
-        return response;
+
+    private ListingResponse toDto(Listing l) {
+        ListingResponse r = new ListingResponse();
+        r.setId(l.getId());
+        r.setVendorId(l.getVendor() != null ? l.getVendor().getId() : null);
+        r.setTitle(l.getTitle());
+        r.setDescription(l.getDescription());
+        r.setCategory(l.getCategory());
+        r.setLocation(l.getLocation());
+        r.setPrice(l.getPrice());
+        r.setCurrency(l.getCurrency());
+        // Set default values for fields that may not exist in current entity
+        r.setStatus("ACTIVE");  // Default status
+        r.setAvgRating(0.0);    // Default rating
+        r.setReviewCount(0);    // Default review count
+        r.setAvailable(true);   // Default availability
+        r.setCreatedAt(l.getCreatedAt());
+        r.setUpdatedAt(l.getUpdatedAt());
+        return r;
     }
 }

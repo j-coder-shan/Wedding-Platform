@@ -1,0 +1,12 @@
+﻿package lk.wedrent.wedrent_backend.dto;
+
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+
+public record BookingRequest(
+    @NotNull Long listingId,
+    @NotNull LocalDate startDate,
+    @NotNull LocalDate endDate,
+    @NotNull BigDecimal totalPrice
+) {}

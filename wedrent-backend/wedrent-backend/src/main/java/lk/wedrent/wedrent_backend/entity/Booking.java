@@ -1,0 +1,51 @@
+package lk.wedrent.wedrent_backend.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "bookings")
+public class Booking {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(optional = false) @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne(optional = false) @JoinColumn(name = "listing_id")
+    private Listing listing;
+
+    @NotNull private LocalDate startDate;
+    @NotNull private LocalDate endDate;
+
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status = BookingStatus.PENDING;
+
+    @NotNull private BigDecimal totalPrice;
+
+    @Version
+    private Long version;
+
+    public Booking() {}
+
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public Listing getListing() { return listing; }
+    public void setListing(Listing listing) { this.listing = listing; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public BookingStatus getStatus() { return status; }
+    public void setStatus(BookingStatus status) { this.status = status; }
+    public BigDecimal getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+}
