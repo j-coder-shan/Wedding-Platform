@@ -1,20 +1,23 @@
 package lk.wedrent.wedrent_backend.dto;
 
-import java.math.BigDecimal;
-import lk.wedrent.wedrent_backend.entity.ListingCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Positive;
+import lk.wedrent.wedrent_backend.entity.ListingCategory;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ListingRequest {
-    
-    @NotNull(message = "Vendor ID is required")
-    private Long vendorId;
     
     @NotBlank(message = "Title is required")
     private String title;
     
-    @NotBlank(message = "Description is required")
     private String description;
     
     @NotNull(message = "Category is required")
